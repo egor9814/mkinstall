@@ -53,7 +53,6 @@ func pack() {
 
 	err = generate()
 	if err != nil {
-		output.Close()
 		log.Fatal(err)
 	}
 
