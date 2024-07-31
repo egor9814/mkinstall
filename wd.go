@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"os"
+	"os/exec"
 	"path"
+	"strings"
 )
 
 var workDir string
@@ -25,6 +28,18 @@ func init() {
 
 	found := false
 	goPath, found = os.LookupEnv("GOPATH")
+	if !found {
+		cmd := exec.Command("go", "env", "GOPATH")
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		if err := cmd.Run(); err == nil {
+			goPath = strings.TrimSpace(out.String())
+			info, err := os.Stat(goPath)
+			if err == nil && info.IsDir() {
+				found = true
+			}
+		}
+	}
 	if !found {
 		log.Fatal("GOPATH not provided")
 	}
