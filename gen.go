@@ -104,16 +104,16 @@ func generate() error {
 		return err
 	}
 
-	if data, err := install.Json(); err != nil {
-		return err
-	} else {
-		if err := write("install.json", string(data)); err != nil {
-			return err
-		}
-	}
-
 	for i, it := range makeInstall.Target.Platforms {
 		log.Printf("> [%d/%d] building installer for %s %s...\n", i+1, pl, it.Os, it.Arch)
+		install.Target.Path = it.Path
+		if data, err := install.Json(); err != nil {
+			return err
+		} else {
+			if err := write("install.json", string(data)); err != nil {
+				return err
+			}
+		}
 		if err := buildInstaller(&it); err != nil {
 			return err
 		}

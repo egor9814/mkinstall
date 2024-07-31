@@ -32,6 +32,7 @@ func (ii *InstallInfo) Json() ([]byte, error) {
 type TargetPlatform struct {
 	Os   string `json:"os"`
 	Arch string `json:"arch"`
+	Path string `json:"path"`
 }
 
 type MakeInstallInfo struct {
@@ -39,9 +40,8 @@ type MakeInstallInfo struct {
 		Name string `json:"name"`
 	} `json:"product"`
 	Target struct {
-		Path      string           `json:"path"`
-		Editable  bool             `json:"editable"`
-		Platforms []TargetPlatform `json:"platforms"`
+		EditablePath bool             `json:"editable_path"`
+		Platforms    []TargetPlatform `json:"platforms"`
 	} `json:"target"`
 	Files struct {
 		Embed   bool     `json:"embed"`
@@ -107,4 +107,8 @@ loop:
 		list = append(list, it)
 	}
 	return
+}
+
+func (ii *MakeInstallInfo) Json() ([]byte, error) {
+	return json.MarshalIndent(ii, "", "  ")
 }

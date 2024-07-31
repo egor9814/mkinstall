@@ -1,7 +1,6 @@
 package main
 
 import (
-	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -27,11 +26,31 @@ func version() {
 	fmt.Printf("%s v%d.%d.%d%s\n", exe(), Version.Major, Version.Minor, Version.Patch, Version.Suffix)
 }
 
-//go:embed mkinstall.json
-var template_mkinstall_json string
-
 func initProject() {
-	if err := os.WriteFile("mkinstall.json", []byte(template_mkinstall_json), 0700); err != nil {
+	makeInstall.Product.Name = path.Base(workDir)
+	makeInstall.Target.EditablePath = true
+	makeInstall.Target.Platforms = []TargetPlatform{
+		{
+			Os:   "windows",
+			Arch: "amd64",
+			Path: "$HOME/",
+		},
+		{
+			Os:   "linux",
+			Arch: "amd64",
+			Path: "$HOME/",
+		},
+	}
+	makeInstall.Files.Embed = false
+	makeInstall.Files.Type = "zstd"
+	makeInstall.Files.Split = "8G"
+	makeInstall.Files.Include = make([]string, 0)
+	makeInstall.Files.Exclude = make([]string, 0)
+	data, err := makeInstall.Json()
+	if err == nil {
+		err = os.WriteFile("mkinstall.json", data, 0600)
+	}
+	if err != nil {
 		log.Fatal(err)
 	}
 }

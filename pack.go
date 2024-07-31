@@ -13,8 +13,7 @@ func pack() {
 	}
 
 	install.Product.Name = makeInstall.Product.Name
-	install.Target.Path = makeInstall.Target.Path
-	install.Target.Editable = makeInstall.Target.Editable
+	install.Target.Editable = makeInstall.Target.EditablePath
 	install.Files.Embed = false                 // TODO: support
 	install.Files.Type = "zstd"                 // TODO: support
 	rawOutput.maxCount = 8 * 1024 * 1024 * 1024 // TODO: support
