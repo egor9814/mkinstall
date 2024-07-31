@@ -9,14 +9,12 @@ import (
 type tarOutputImpl struct {
 	w0 io.WriteCloser
 	w  *tar.Writer
-	f  func() error
 }
 
-func newTarOutput(w io.WriteCloser, flush func() error) *tarOutputImpl {
+func newTarOutput(w io.WriteCloser) *tarOutputImpl {
 	return &tarOutputImpl{
 		w0: w,
 		w:  tar.NewWriter(w),
-		f:  flush,
 	}
 }
 
@@ -29,9 +27,6 @@ func (w *tarWriter) Write(b []byte) (int, error) {
 }
 
 func (w *tarWriter) Close() error {
-	// if w.i.f != nil {
-	// 	return w.i.f()
-	// }
 	return nil
 }
 

@@ -10,7 +10,9 @@ var workDir string
 var workOutputDir string
 var workInstallerDir string
 
-func initWorkDir() {
+var goPath, goCache string
+
+func init() {
 	if wd, err := os.Getwd(); err != nil {
 		log.Fatal(err)
 	} else {
@@ -20,4 +22,10 @@ func initWorkDir() {
 	workInstallerDir = path.Join(workDir, ".mkinstall")
 
 	goCache = path.Join(workInstallerDir, ".cache")
+
+	found := false
+	goPath, found = os.LookupEnv("GOPATH")
+	if !found {
+		log.Fatal("GOPATH not provided")
+	}
 }

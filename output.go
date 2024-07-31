@@ -17,5 +17,5 @@ func NewOutput() (IOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newTarOutput(coder, coder.Flush), nil
+	return newTarOutput(coder), nil
 }

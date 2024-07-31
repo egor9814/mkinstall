@@ -123,25 +123,13 @@ func generate() error {
 }
 
 func buildInstaller(platform *TargetPlatform) error {
-	// gopath, gopathFound := os.LookupEnv("GOPATH")
-	// if !gopathFound {
-	// 	return errors.New("GOPATH not provided")
-	// }
-	// gomodcache, gomodcacheFound := os.LookupEnv("GOMODCACHE")
-	// if !gomodcacheFound {
-	// 	return errors.New("GOMODCACHE not provided")
-	// }
-	// gocache, gocacheFound := os.LookupEnv("GOCACHE")
-	// if !gocacheFound {
-	// 	return errors.New("GOCACHE not provided")
-	// }
 	target := path.Join(workOutputDir, "Setup_"+platform.Arch)
 	if platform.Os == "windows" {
 		target += ".exe"
 	}
 	cmd := exec.Command("go", "build", "-v", "-o", target)
 	cmd.Dir = workInstallerDir
-	cmd.Env = append(cmd.Env, "GOOS="+platform.Os, "GOARCH="+platform.Arch, "GOPATH="+goPath /* "GOMODCACHE="+gomodcache,  */, "GOCACHE="+goCache)
+	cmd.Env = append(cmd.Env, "GOOS="+platform.Os, "GOARCH="+platform.Arch, "GOPATH="+goPath, "GOCACHE="+goCache)
 	var out bytes.Buffer
 	cmd.Stderr = &out
 	cmd.Stdout = &out

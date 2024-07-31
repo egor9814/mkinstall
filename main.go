@@ -37,8 +37,6 @@ func initProject() {
 }
 
 func main() {
-	initWorkDir()
-
 	inputFile := "mkinstall.json"
 
 	for i, l := 1, len(os.Args); i < l; i++ {
