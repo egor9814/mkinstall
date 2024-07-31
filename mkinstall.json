@@ -1,0 +1,26 @@
+{
+    "product": {
+        "name": "My Product"
+    },
+    "target": {
+        "path": "$HOME/",
+        "editable": true,
+        "platforms": [
+            {
+                "os": "windows",
+                "arch": "amd64"
+            },
+            {
+                "os": "linux",
+                "arch": "amd64"
+            }
+        ]
+    },
+    "files": {
+        "embed": false,
+        "type": "zstd",
+        "split": "8G",
+        "include": [],
+        "exclude": []
+    }
+}
