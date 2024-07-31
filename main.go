@@ -12,7 +12,15 @@ func exe() string {
 	return path.Base(os.Args[0])
 }
 
-func help() {}
+func help() {
+	fmt.Println("Make Install - Utilty for making installers")
+	fmt.Printf("Usage: %s [COMMAND|FILE]\n", exe())
+	fmt.Println("File by default is 'mkinstall.json'")
+	fmt.Println("Commands:")
+	fmt.Println(" help           - Print this help")
+	fmt.Println(" version        - Print utility version")
+	fmt.Println(" init           - Create mkinstall.json file in current directory")
+}
 
 func version() {
 	parseVersion()

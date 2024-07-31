@@ -251,6 +251,13 @@ func main() {
 			fmt.Printf("%s v%d.%d.%d%s\n", exe(), Version.Major, Version.Minor, Version.Patch, Version.Suffix)
 			return
 
+		case "help":
+			fmt.Printf("Usage: %s [COMMAND]\n", exe())
+			fmt.Println("Commands:")
+			fmt.Println(" help           - Print this help")
+			fmt.Println(" version        - Print installer version")
+			return
+
 		default:
 			// skip
 		}
