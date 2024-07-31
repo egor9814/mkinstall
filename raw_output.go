@@ -63,24 +63,26 @@ func (w *rawOutputWriter) Write(b []byte) (n int, err error) {
 		}
 	}
 	rem := rawOutput.maxCount - w.count
-	offset := 0
-	if l := len(b); l > rem {
-		n, err = w.current.Write(b[:rem])
-		if err == nil && n < rem {
-			err = io.ErrShortWrite
+	for {
+		if l := len(b); l > rem {
+			n, err = w.current.Write(b[:rem])
+			if err == nil && n < rem {
+				err = io.ErrShortWrite
+			}
+			if err == nil {
+				err = w.open()
+			}
+			if err != nil {
+				return
+			}
+			b = b[rem:]
+			rem = rawOutput.maxCount
+		} else {
+			rem = l
+			break
 		}
-		if err == nil {
-			err = w.open()
-		}
-		offset = rem
-		rem = l - rem
-		if err != nil {
-			return
-		}
-	} else {
-		rem = l
 	}
-	n, err = w.current.Write(b[offset:])
+	n, err = w.current.Write(b)
 	if err == nil && n != rem {
 		err = io.ErrShortWrite
 	}
