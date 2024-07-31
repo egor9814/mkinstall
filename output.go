@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/klauspost/compress/zstd"
@@ -12,10 +13,22 @@ type IOutput interface {
 }
 
 func NewOutput() (IOutput, error) {
-	writer := &rawOutputWriter{}
-	coder, err := zstd.NewWriter(writer, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
-	if err != nil {
-		return nil, err
+	switch install.Files.Type {
+	case "raw":
+		return &rawOutput, nil
+
+	case "tar":
+		return newTarOutput(&rawOutputWriter{}), nil
+
+	case "zstd":
+		// TODO: support zstd compression level
+		coder, err := zstd.NewWriter(&rawOutputWriter{}, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
+		if err != nil {
+			return nil, err
+		}
+		return newTarOutput(coder), nil
+
+	default:
+		return nil, fmt.Errorf("unsupported files.type %q (supported: raw, tar, zstd)", install.Files.Type)
 	}
-	return newTarOutput(coder), nil
 }

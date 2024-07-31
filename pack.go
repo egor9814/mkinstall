@@ -15,7 +15,7 @@ func pack() {
 	install.Product.Name = makeInstall.Product.Name
 	install.Target.Editable = makeInstall.Target.EditablePath
 	install.Files.Embed = false // TODO: support
-	install.Files.Type = "zstd" // TODO: support
+	install.Files.Type = makeInstall.Files.Type
 
 	if n, err := makeInstall.ParseSplitSize(); err != nil {
 		log.Fatal(err)

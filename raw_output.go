@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 )
 
@@ -12,6 +13,13 @@ type rawOutputImpl struct {
 }
 
 func (o *rawOutputImpl) Open(name string, size int) (io.WriteCloser, error) {
+	if path.IsAbs(name) {
+		var err error
+		name, err = filepath.Rel(workDir, name)
+		if err != nil {
+			return nil, err
+		}
+	}
 	target := path.Join(workOutputDir, name)
 	if err := os.MkdirAll(path.Dir(target), 0700); err != nil {
 		return nil, err
