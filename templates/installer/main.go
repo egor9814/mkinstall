@@ -238,7 +238,23 @@ func showError(err error) {
 	os.Exit(1)
 }
 
+func exe() string {
+	return path.Base(os.Args[0])
+}
+
 func main() {
+	for i, l := 1, len(os.Args); i < l; i++ {
+		it := os.Args[i]
+		switch it {
+		case "version":
+			parseVersion()
+			fmt.Printf("%s v%d.%d.%d%s\n", exe(), Version.Major, Version.Minor, Version.Patch, Version.Suffix)
+			return
+
+		default:
+			// skip
+		}
+	}
 	handleError(languagePage(), false)
 
 	handlePage(welcomePage)

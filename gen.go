@@ -38,6 +38,9 @@ var template_raw_input_go string
 //go:embed templates/installer/tar_input.go
 var template_tar_input_go string
 
+//go:embed version.go
+var template_version_go string
+
 func generate() error {
 	pl := len(makeInstall.Target.Platforms)
 	if pl == 0 {
@@ -90,6 +93,14 @@ func generate() error {
 	}
 
 	if err := write("tar_input.go", template_tar_input_go); err != nil {
+		return err
+	}
+
+	if err := write("version.go", template_version_go); err != nil {
+		return err
+	}
+
+	if err := write("version.ref", version_ref); err != nil {
 		return err
 	}
 

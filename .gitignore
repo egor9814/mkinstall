@@ -23,3 +23,6 @@ go.work.sum
 
 # Test folder
 test
+
+# Auto-generated version file
+version.ref

@@ -2,11 +2,22 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 	"log"
 	"os"
+	"path"
 )
 
+func exe() string {
+	return path.Base(os.Args[0])
+}
+
 func help() {}
+
+func version() {
+	parseVersion()
+	fmt.Printf("%s v%d.%d.%d%s\n", exe(), Version.Major, Version.Minor, Version.Patch, Version.Suffix)
+}
 
 //go:embed mkinstall.json
 var template_mkinstall_json string
@@ -27,6 +38,10 @@ func main() {
 		switch it {
 		case "help":
 			help()
+			return
+
+		case "version":
+			version()
 			return
 
 		case "init":
