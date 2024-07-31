@@ -7,6 +7,11 @@ import (
 )
 
 func pack() {
+	log.Printf("> cleanup...")
+	if err := cleanup(); err != nil {
+		log.Fatal(err)
+	}
+
 	install.Product.Name = makeInstall.Product.Name
 	install.Target.Path = makeInstall.Target.Path
 	install.Target.Editable = makeInstall.Target.Editable
