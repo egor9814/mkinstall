@@ -2,10 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
+	"unicode"
 )
 
 type InstallInfo struct {
@@ -111,4 +114,31 @@ loop:
 
 func (ii *MakeInstallInfo) Json() ([]byte, error) {
 	return json.MarshalIndent(ii, "", "  ")
+}
+
+func (ii *MakeInstallInfo) ParseSplitSize() (int, error) {
+	i := 0
+	s := []rune(ii.Files.Split)
+	l := len(s)
+	for ; i < l; i++ {
+		if !unicode.IsDigit(s[i]) {
+			break
+		}
+	}
+	if i == 0 {
+		return 0, errors.New("files.split has invalid format")
+	}
+	n, err := strconv.ParseUint(string(s[:i]), 10, 64)
+	if err == nil && i != l {
+		for _, it := range "KMGT" {
+			n *= 1024
+			if it == s[i] {
+				break
+			}
+		}
+	}
+	if err == nil && n == 0 {
+		n = 9223372036854775807 // int64.max
+	}
+	return int(n), err
 }

@@ -14,9 +14,14 @@ func pack() {
 
 	install.Product.Name = makeInstall.Product.Name
 	install.Target.Editable = makeInstall.Target.EditablePath
-	install.Files.Embed = false                 // TODO: support
-	install.Files.Type = "zstd"                 // TODO: support
-	rawOutput.maxCount = 8 * 1024 * 1024 * 1024 // TODO: support
+	install.Files.Embed = false // TODO: support
+	install.Files.Type = "zstd" // TODO: support
+
+	if n, err := makeInstall.ParseSplitSize(); err != nil {
+		log.Fatal(err)
+	} else {
+		rawOutput.maxCount = n
+	}
 
 	files, err := makeInstall.makeFiles()
 	if err != nil {
