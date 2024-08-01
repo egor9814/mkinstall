@@ -57,7 +57,7 @@ func (f *VirtualFile) Open() (rc io.ReadCloser, err error) {
 			return nil, os.ErrNotExist
 		}
 	} else {
-		return os.Open(f.Path)
+		return os.Open(path.Join(workDir, f.Path))
 	}
 }
 
@@ -78,7 +78,7 @@ func (f *VirtualFile) Size() (int, error) {
 		}
 		return 0, os.ErrNotExist
 	}
-	info, err := os.Stat(f.Path)
+	info, err := os.Stat(path.Join(workDir, f.Path))
 	if err != nil {
 		return 0, err
 	}

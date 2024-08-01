@@ -42,6 +42,9 @@ var template_raw_input_go string
 //go:embed templates/installer/tar_input.go
 var template_tar_input_go string
 
+//go:embed templates/installer/wd.go
+var template_wd_go string
+
 //go:embed version.go
 var template_version_go string
 
@@ -99,6 +102,10 @@ func generate() error {
 	}
 
 	if err := write("tar_input.go", template_tar_input_go); err != nil {
+		return err
+	}
+
+	if err := write("wd.go", template_wd_go); err != nil {
 		return err
 	}
 
