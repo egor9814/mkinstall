@@ -29,17 +29,21 @@ func version() {
 func initProject() {
 	makeInstall.Product.Name = path.Base(workDir)
 	makeInstall.Target.EditablePath = true
-	makeInstall.Target.Platforms = []TargetPlatform{
-		{
-			Os:   "windows",
-			Arch: "amd64",
-			Path: "$HOME/",
-		},
-		{
-			Os:   "linux",
-			Arch: "amd64",
-			Path: "$HOME/",
-		},
+	platformOs := []string{
+		"windows", "linux", "darwin", "android", "freebsd", "netbsd", "openbsd", "dragonfly", "plan9", "nacl",
+	}
+	platformArch := []string{
+		"amd64", "arm", "amd64p32", "386",
+	}
+	makeInstall.Target.Platforms = make([]TargetPlatform, len(platformOs)*len(platformArch))
+	for i, os := range platformOs {
+		for j, arch := range platformArch {
+			makeInstall.Target.Platforms[i*len(platformArch)+j] = TargetPlatform{
+				Os:   os,
+				Arch: arch,
+				Path: "$HOME/",
+			}
+		}
 	}
 	makeInstall.Files.Embed = false
 	makeInstall.Files.Type = "zstd"

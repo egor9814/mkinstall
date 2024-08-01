@@ -142,7 +142,7 @@ func init() {
 }
 
 func buildInstaller(platform *TargetPlatform) error {
-	target := path.Join(workOutputDir, "Setup_"+platform.Arch)
+	target := path.Join(workOutputDir, "Setup_"+platform.Os+"_"+platform.Arch)
 	if platform.Os == "windows" {
 		target += ".exe"
 	}
