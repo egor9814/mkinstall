@@ -45,7 +45,6 @@ func initProject() {
 			}
 		}
 	}
-	makeInstall.Files.Embed = false
 	makeInstall.Files.Type = "zstd"
 	makeInstall.Files.Split = "8G"
 	makeInstall.Files.Encrypt = false

@@ -14,10 +14,6 @@ func pack() {
 
 	install.Product.Name = makeInstall.Product.Name
 	install.Target.Editable = makeInstall.Target.EditablePath
-	install.Files.Embed = makeInstall.Files.Embed
-	if install.Files.Embed {
-		workDataDir = workInstallerDir
-	}
 	install.Files.Type = makeInstall.Files.Type
 	install.Files.Encrypt = makeInstall.Files.Encrypt
 	if install.Files.Encrypt {

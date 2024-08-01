@@ -20,7 +20,6 @@ type InstallInfo struct {
 		Editable bool   `json:"editable"`
 	} `json:"target"`
 	Files struct {
-		Embed   bool     `json:"embed"`
 		Type    string   `json:"type"`
 		Encrypt bool     `json:"encrypt"`
 		List    []string `json:"list"`
@@ -48,7 +47,6 @@ type MakeInstallInfo struct {
 		Platforms    []TargetPlatform `json:"platforms"`
 	} `json:"target"`
 	Files struct {
-		Embed   bool     `json:"embed"`
 		Type    string   `json:"type"`
 		Split   string   `json:"split"`
 		Encrypt bool     `json:"encrypt"`
@@ -123,10 +121,6 @@ func (ii *MakeInstallInfo) Json() ([]byte, error) {
 }
 
 func (ii *MakeInstallInfo) ParseSplitSize() (int, error) {
-	maximum := uint64(9223372036854775807) // int64.max
-	if ii.Files.Embed {
-		return int(maximum), nil
-	}
 	i := 0
 	s := []rune(ii.Files.Split)
 	l := len(s)
@@ -148,7 +142,7 @@ func (ii *MakeInstallInfo) ParseSplitSize() (int, error) {
 		}
 	}
 	if err == nil && n == 0 {
-		n = maximum
+		n = 9223372036854775807 // int64.max
 	}
 	return int(n), err
 }

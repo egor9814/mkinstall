@@ -45,8 +45,7 @@ func (i *rawInputImpl) NextFile() VirtualFile {
 	}
 	i.index++
 	return VirtualFile{
-		Path:  install.Files.List[i.index-1],
-		Embed: install.Files.Embed,
+		Path: install.Files.List[i.index-1],
 	}
 }
 
