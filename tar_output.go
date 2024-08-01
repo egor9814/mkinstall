@@ -3,6 +3,7 @@ package main
 import (
 	"archive/tar"
 	"io"
+	"os"
 	"path/filepath"
 )
 
@@ -30,15 +31,16 @@ func (w *tarWriter) Close() error {
 	return nil
 }
 
-func (o *tarOutputImpl) Open(name string, size int) (io.WriteCloser, error) {
+func (o *tarOutputImpl) Open(name string) (io.WriteCloser, error) {
 	realName, err := filepath.Rel(workDir, name)
 	if err != nil {
 		return nil, err
 	}
+	info, _ := os.Stat(realName)
 	header := tar.Header{
 		Name: realName,
 		Mode: 0600,
-		Size: int64(size),
+		Size: info.Size(),
 	}
 	if err := o.w.WriteHeader(&header); err != nil {
 		return nil, err

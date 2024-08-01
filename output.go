@@ -9,7 +9,7 @@ import (
 
 type IOutput interface {
 	io.Closer
-	Open(name string, size int) (io.WriteCloser, error)
+	Open(name string) (io.WriteCloser, error)
 }
 
 func NewOutput() (IOutput, error) {

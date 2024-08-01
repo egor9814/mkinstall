@@ -42,8 +42,7 @@ func pack() {
 	fl := len(files)
 	for i, it := range files {
 		log.Printf("> [%d/%d] packing %q...\n", i+1, fl, it)
-		info, _ := os.Stat(it)
-		out, err := output.Open(it, int(info.Size()))
+		out, err := output.Open(it)
 		if err != nil {
 			output.Close()
 			log.Fatal(err)

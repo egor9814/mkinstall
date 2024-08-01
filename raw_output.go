@@ -12,7 +12,7 @@ type rawOutputImpl struct {
 	maxCount int
 }
 
-func (o *rawOutputImpl) Open(name string, size int) (io.WriteCloser, error) {
+func (o *rawOutputImpl) Open(name string) (io.WriteCloser, error) {
 	if path.IsAbs(name) {
 		var err error
 		name, err = filepath.Rel(workDir, name)
@@ -57,7 +57,7 @@ func (w *rawOutputWriter) open() (err error) {
 	}
 	if err == nil {
 		w.index++
-		w.current, err = rawOutput.Open("data-"+strconv.Itoa(w.index)+".dat", rawOutput.maxCount)
+		w.current, err = rawOutput.Open("data-" + strconv.Itoa(w.index) + ".dat")
 		if err == nil {
 			w.count = 0
 		} else {
