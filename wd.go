@@ -12,6 +12,7 @@ import (
 var workDir string
 var workOutputDir string
 var workInstallerDir string
+var workDataDir string
 
 var goPath, goCache string
 
@@ -23,6 +24,7 @@ func init() {
 	}
 	workOutputDir = path.Join(workDir, "mkinstall-output")
 	workInstallerDir = path.Join(workDir, ".mkinstall")
+	workDataDir = workOutputDir
 
 	goCache = path.Join(workInstallerDir, ".cache")
 

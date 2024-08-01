@@ -14,7 +14,10 @@ func pack() {
 
 	install.Product.Name = makeInstall.Product.Name
 	install.Target.Editable = makeInstall.Target.EditablePath
-	install.Files.Embed = false // TODO: support
+	install.Files.Embed = makeInstall.Files.Embed
+	if install.Files.Embed {
+		workDataDir = workInstallerDir
+	}
 	install.Files.Type = makeInstall.Files.Type
 
 	if n, err := makeInstall.ParseSplitSize(); err != nil {
@@ -27,7 +30,6 @@ func pack() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	output, err := NewOutput()
 	if err != nil {
 		log.Fatal(err)

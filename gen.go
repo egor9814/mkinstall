@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
+	"strings"
 )
 
 //go:embed templates/installer/file.go
@@ -102,6 +104,28 @@ func generate() error {
 
 	if err := write("version.ref", version_ref); err != nil {
 		return err
+	}
+
+	if install.Files.Embed {
+		template := make([]string, 1, 2+2*len(install.Files.List))
+		template[0] = `package main
+
+import _ "embed"
+
+func init() {
+	embedFiles = make(EmbedFiles)`
+		for i, it := range install.Files.List {
+			template = append(template, "\tembedFiles[\""+it+"\"] = __embed_file_"+strconv.Itoa(i))
+		}
+		template = append(template, "}\n")
+
+		for i, it := range install.Files.List {
+			template = append(template, "//go:embed "+it+"\nvar __embed_file_"+strconv.Itoa(i)+" []byte\n")
+		}
+
+		if err := write("embed_files.go", strings.Join(template, "\n")); err != nil {
+			return err
+		}
 	}
 
 	for i, it := range makeInstall.Target.Platforms {

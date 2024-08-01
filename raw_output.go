@@ -20,7 +20,7 @@ func (o *rawOutputImpl) Open(name string, size int) (io.WriteCloser, error) {
 			return nil, err
 		}
 	}
-	target := path.Join(workOutputDir, name)
+	target := path.Join(workDataDir, name)
 	if err := os.MkdirAll(path.Dir(target), 0700); err != nil {
 		return nil, err
 	}

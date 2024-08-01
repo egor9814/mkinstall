@@ -117,6 +117,10 @@ func (ii *MakeInstallInfo) Json() ([]byte, error) {
 }
 
 func (ii *MakeInstallInfo) ParseSplitSize() (int, error) {
+	maximum := uint64(9223372036854775807) // int64.max
+	if ii.Files.Embed {
+		return int(maximum), nil
+	}
 	i := 0
 	s := []rune(ii.Files.Split)
 	l := len(s)
@@ -138,7 +142,7 @@ func (ii *MakeInstallInfo) ParseSplitSize() (int, error) {
 		}
 	}
 	if err == nil && n == 0 {
-		n = 9223372036854775807 // int64.max
+		n = maximum
 	}
 	return int(n), err
 }
