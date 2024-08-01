@@ -61,7 +61,11 @@ func (ii *MakeInstallInfo) load(name string) error {
 	if data, err := os.ReadFile(name); err != nil {
 		return err
 	} else {
-		return json.Unmarshal(data, ii)
+		err = json.Unmarshal(data, ii)
+		if err == nil && len(makeInstall.Target.Platforms) == 0 {
+			return errors.New("no target platforms")
+		}
+		return err
 	}
 }
 

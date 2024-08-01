@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	_ "embed"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -44,11 +43,6 @@ var template_tar_input_go string
 var template_version_go string
 
 func generate() error {
-	pl := len(makeInstall.Target.Platforms)
-	if pl == 0 {
-		return errors.New("no target platforms") // TODO: move to MakeInstallInfo::load
-	}
-
 	write := func(name, data string) error {
 		target := path.Join(workInstallerDir, name)
 		if err := os.MkdirAll(path.Dir(target), 0700); err != nil {
@@ -128,6 +122,7 @@ func init() {
 		}
 	}
 
+	pl := len(makeInstall.Target.Platforms)
 	for i, it := range makeInstall.Target.Platforms {
 		log.Printf("> [%d/%d] building installer for %s %s...\n", i+1, pl, it.Os, it.Arch)
 		install.Target.Path = it.Path
