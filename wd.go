@@ -23,7 +23,7 @@ func init() {
 		workDir = wd
 	}
 	workOutputDir = path.Join(workDir, "mkinstall-output")
-	workInstallerDir = path.Join(workDir, ".mkinstall")
+	workInstallerDir = path.Join(workDir, "mkinstall-temp")
 	workDataDir = workOutputDir
 
 	goCache = path.Join(workInstallerDir, ".cache")
