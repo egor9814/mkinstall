@@ -32,6 +32,10 @@ func (o *rawOutputImpl) Open(name string, size int) (io.WriteCloser, error) {
 		install.Files.List = make([]string, 0, 64)
 	}
 	install.Files.List = append(install.Files.List, name)
+	if install.Files.Encrypt {
+		encoder.wc = out
+		return &encoder, nil
+	}
 	return out, nil
 }
 

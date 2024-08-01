@@ -35,7 +35,13 @@ func (r *bytesReader) Close() error {
 	return nil
 }
 
-func (f *VirtualFile) Open() (io.ReadCloser, error) {
+func (f *VirtualFile) Open() (rc io.ReadCloser, err error) {
+	defer func() {
+		if rc != nil && install.Files.Encrypt {
+			decoder.rc = rc
+			rc = &decoder
+		}
+	}()
 	if len(f.Path) == 0 {
 		return nil, nil
 	}

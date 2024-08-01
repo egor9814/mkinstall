@@ -12,6 +12,9 @@ import (
 	"strings"
 )
 
+//go:embed templates/installer/decoder.go
+var template_decoder_go string
+
 //go:embed templates/installer/file.go
 var template_file_go string
 
@@ -43,15 +46,22 @@ var template_tar_input_go string
 var template_version_go string
 
 func generate() error {
-	write := func(name, data string) error {
+	writeBytes := func(name string, data []byte) error {
 		target := path.Join(workInstallerDir, name)
 		if err := os.MkdirAll(path.Dir(target), 0700); err != nil {
 			return err
 		}
-		return os.WriteFile(target, []byte(data), 0600)
+		return os.WriteFile(target, data, 0600)
+	}
+	write := func(name, data string) error {
+		return writeBytes(name, []byte(data))
 	}
 
 	log.Printf("> generating installer...\n")
+	if err := write("decoder.go", template_decoder_go); err != nil {
+		return err
+	}
+
 	if err := write("file.go", template_file_go); err != nil {
 		return err
 	}
@@ -118,6 +128,16 @@ func init() {
 		}
 
 		if err := write("embed_files.go", strings.Join(template, "\n")); err != nil {
+			return err
+		}
+	}
+
+	if install.Files.Encrypt {
+		if err := writeBytes("encoder.key", encoder.key[:]); err != nil {
+			return err
+		}
+	} else {
+		if err := write("encoder.key", ""); err != nil {
 			return err
 		}
 	}

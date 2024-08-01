@@ -20,9 +20,10 @@ type InstallInfo struct {
 		Editable bool   `json:"editable"`
 	} `json:"target"`
 	Files struct {
-		Embed bool     `json:"embed"`
-		Type  string   `json:"type"`
-		List  []string `json:"list"`
+		Embed   bool     `json:"embed"`
+		Type    string   `json:"type"`
+		Encrypt bool     `json:"encrypt"`
+		List    []string `json:"list"`
 	} `json:"files"`
 }
 
@@ -50,6 +51,7 @@ type MakeInstallInfo struct {
 		Embed   bool     `json:"embed"`
 		Type    string   `json:"type"`
 		Split   string   `json:"split"`
+		Encrypt bool     `json:"encrypt"`
 		Include []string `json:"include"`
 		Exclude []string `json:"exclude"`
 	} `json:"files"`

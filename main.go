@@ -48,6 +48,7 @@ func initProject() {
 	makeInstall.Files.Embed = false
 	makeInstall.Files.Type = "zstd"
 	makeInstall.Files.Split = "8G"
+	makeInstall.Files.Encrypt = false
 	makeInstall.Files.Include = make([]string, 0)
 	makeInstall.Files.Exclude = make([]string, 0)
 	data, err := makeInstall.Json()

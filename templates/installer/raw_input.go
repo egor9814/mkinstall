@@ -67,13 +67,12 @@ func (i *rawInputImpl) Close() error {
 }
 
 type rawReader struct {
-	impl rawInputImpl
-	buf  bytes.Buffer
+	buf bytes.Buffer
 }
 
 func (r *rawReader) populate() error {
 	if r.buf.Available() == 0 {
-		if f := r.impl.NextFile(); f.IsValid() {
+		if f := rawInput.NextFile(); f.IsValid() {
 			rc, err := f.Open()
 			if err != nil {
 				return err
@@ -92,6 +91,6 @@ func (r *rawReader) Read(p []byte) (int, error) {
 		return 0, err
 	}
 	n, err := r.buf.Read(p)
-	r.impl.readCount += n
+	rawInput.readCount += n
 	return n, err
 }

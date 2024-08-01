@@ -19,6 +19,10 @@ func pack() {
 		workDataDir = workInstallerDir
 	}
 	install.Files.Type = makeInstall.Files.Type
+	install.Files.Encrypt = makeInstall.Files.Encrypt
+	if install.Files.Encrypt {
+		initEncoderKey()
+	}
 
 	if n, err := makeInstall.ParseSplitSize(); err != nil {
 		log.Fatal(err)
