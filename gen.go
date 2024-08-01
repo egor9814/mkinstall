@@ -54,7 +54,7 @@ func generate() error {
 		if err := os.MkdirAll(path.Dir(target), 0700); err != nil {
 			return err
 		}
-		return os.WriteFile(target, []byte(data), 0700) // TODO: permissions
+		return os.WriteFile(target, []byte(data), 0600)
 	}
 
 	log.Printf("> generating installer...\n")

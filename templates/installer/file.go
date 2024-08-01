@@ -81,15 +81,8 @@ func (f *VirtualFile) Size() (int, error) {
 
 func (f *VirtualFile) Create() (*os.File, error) {
 	dir := path.Dir(f.Path)
-	// if info, err := os.Stat(dir); err != nil {
-	// 	if err := os.MkdirAll(dir, 0700); err != nil { // TODO: permissons
-	// 		return nil, err
-	// 	}
-	// } else if !info.IsDir() {
-	// 	return nil, fmt.Errorf("expcted directory: %q", dir)
-	// }
-	if err := os.MkdirAll(dir, 0700); err != nil { // TODO: permissons
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return nil, err
 	}
-	return os.OpenFile(f.Path, os.O_CREATE|os.O_WRONLY, 0700) // TODO: permissons
+	return os.OpenFile(f.Path, os.O_CREATE|os.O_WRONLY, 0600)
 }
