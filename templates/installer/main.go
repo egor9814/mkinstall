@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
+	"sync"
+	"time"
 
 	"github.com/ncruces/zenity"
 )
@@ -33,16 +36,41 @@ func languagePage() error {
 	panic("unreachable")
 }
 
-func welcomePage() error {
+func zstdMemoryPage() error {
 	title := [...]string{
-		English: "Welcome!",
-		Russian: "Добро пожаловать!",
+		English: "Settings",
+		Russian: "Параметры",
 	}
 	message := [...]string{
-		English: "Welcome to the installation wizard.",
-		Russian: "Вас приветсвует мастер установки.",
+		English: "Memory limit:",
+		Russian: "Ограничение памяти:",
 	}
-	return zenity.Info(message[lang], zenity.Title(title[lang]))
+	available := []string{
+		"1G",
+		"2G",
+		"4G",
+		"8G",
+	}
+	res, err := zenity.List(
+		message[lang],
+		available,
+		zenity.DisallowEmpty(),
+		zenity.RadioList(),
+		zenity.Title(title[lang]),
+		zenity.DefaultItems(available[len(available)-1]),
+	)
+	if err != nil {
+		return err
+	}
+	zstdInputInfo.maxMem = 1
+	for _, it := range available {
+		if it == res {
+			zstdInputInfo.maxMem *= 1024 * 1024 * 1024
+			return nil
+		}
+		zstdInputInfo.maxMem *= 2
+	}
+	panic("unreachable")
 }
 
 func installPathPage() error {
@@ -53,10 +81,10 @@ func installPathPage() error {
 	file, err := zenity.SelectFile(
 		zenity.Title(title[lang]),
 		zenity.Directory(),
-		zenity.Filename(install.Target.Path),
+		zenity.Filename(filepath.FromSlash(install.TargetPath)),
 	)
 	if err == nil {
-		install.Target.Path = path.Join(file, install.Product.Name)
+		install.TargetPath = filepath.Join(file, install.ProductName)
 	}
 	return err
 }
@@ -67,7 +95,7 @@ func summaryPage() error {
 		Russian: "Итог",
 	}
 	message := [...]string{
-		English: "The program will be installed in%qContinue?",
+		English: "The program will be installed in %q\nContinue?",
 		Russian: "Программа будет установлена в %q\nПродолжить?",
 	}
 	changePath := [...]string{
@@ -80,12 +108,12 @@ func summaryPage() error {
 		zenity.OKLabel(Yes[lang]),
 		zenity.CancelLabel(No[lang]),
 	)
-	if install.Target.Editable {
+	if install.TargetPathEditable {
 		options = append(options, zenity.ExtraButton(changePath[lang]))
 	}
 	for {
 		err := zenity.Question(
-			fmt.Sprintf(message[lang], install.Target.Path),
+			fmt.Sprintf(message[lang], filepath.ToSlash(install.TargetPath)),
 			options...,
 		)
 		if err == zenity.ErrExtraButton {
@@ -102,6 +130,12 @@ func summaryPage() error {
 }
 
 func installPage() error {
+	input, err := install.InputType.Open()
+	if err != nil {
+		showError(err)
+		return err
+	}
+
 	title := [...]string{
 		English: "Installing",
 		Russian: "Установка",
@@ -114,64 +148,119 @@ func installPage() error {
 		English: "Extracting %q...",
 		Russian: "Распаковка %q...",
 	}
-	dialog, err := zenity.Progress(
-		zenity.Title(title[lang]),
-		zenity.TimeRemaining(),
-	)
+
+	dialogMtx := sync.Mutex{}
+	makeDialog := func() (zenity.ProgressDialog, error) {
+		return zenity.Progress(
+			zenity.Title(title[lang]),
+			zenity.TimeRemaining(),
+			zenity.MaxValue(int(input.Progress().All())),
+		)
+	}
+	dialog, err := makeDialog()
 	if err != nil {
+		showError(err)
 		return err
 	}
 
 	dialog.Text(preparing[lang])
 	dialog.Value(0)
 
-	input, err := NewInput()
-	if err != nil {
-		return err
-	}
-	for {
-		it, err := input.Next()
-		if err != nil {
-			dialog.Close()
-			showError(err)
-			return err
-		}
-		if !it.IsValid() {
-			break
-		}
-		dialog.Text(fmt.Sprintf(extracting[lang], it.Path))
+	errChan := make(chan error, 1)
+	mtx := sync.Mutex{}
+	pause := false
 
-		outFile := &VirtualFile{Path: path.Join(install.Target.Path, it.Path)}
-		out, err := outFile.Create()
-		if err != nil {
-			dialog.Close()
-			showError(err)
-			return err
+	go func() {
+		for it := range input.Progress().Chan() {
+			dialogMtx.Lock()
+			dialog.Value(int(it))
+			dialogMtx.Unlock()
 		}
+	}()
 
-		rc, err := it.Open()
-		if err != nil {
-			dialog.Close()
-			out.Close()
-			input.Close()
-			return err
-		}
+	go func() {
+		for {
+			mtx.Lock()
+			p := pause
+			mtx.Unlock()
+			if p {
+				time.Sleep(time.Second)
+				continue
+			}
+			it, err := input.Next()
+			if err != nil {
+				input.Close()
+				dialog.Close()
+				errChan <- err
+				return
+			}
+			if !it.IsValid() {
+				break
+			}
+			dialog.Text(fmt.Sprintf(extracting[lang], it.Path))
 
-		if _, err := io.Copy(out, rc); err != nil {
-			dialog.Close()
+			outFile := &VirtualFile{Path: filepath.Join(install.TargetPath, filepath.FromSlash(it.Path))}
+			out, err := outFile.Create()
+			if err != nil {
+				input.Close()
+				dialog.Close()
+				errChan <- err
+				return
+			}
+
+			rc, err := it.Open()
+			if err != nil {
+				out.Close()
+				input.Close()
+				dialog.Close()
+				errChan <- err
+				return
+			}
+
+			if _, err := io.Copy(out, rc); err != nil {
+				rc.Close()
+				out.Close()
+				input.Close()
+				dialog.Close()
+				errChan <- err
+				return
+			}
+
 			rc.Close()
 			out.Close()
-			input.Close()
-			return err
 		}
+		errChan <- nil
+	}()
 
-		out.Close()
-		rc.Close()
-		dialog.Value(100.0 * input.ProgressCurrent() / input.ProgressAll())
+	for {
+		select {
+		case err := <-errChan:
+			if err != nil {
+				showError(err)
+				return err
+			}
+		case <-dialog.Done():
+			mtx.Lock()
+			pause = true
+			mtx.Unlock()
+			if !handleError(zenity.ErrCanceled, true) {
+				dialogMtx.Lock()
+				dialog, err = makeDialog()
+				dialogMtx.Unlock()
+				if err != nil {
+					return err
+				}
+				mtx.Lock()
+				pause = false
+				mtx.Unlock()
+			}
+			continue
+		case <-context.Background().Done():
+		}
+		break
 	}
 
 	input.Close()
-	dialog.Complete()
 	dialog.Close()
 
 	return nil
@@ -239,7 +328,7 @@ func showError(err error) {
 }
 
 func exe() string {
-	return path.Base(os.Args[0])
+	return filepath.Base(os.Args[0])
 }
 
 func main() {
@@ -247,7 +336,6 @@ func main() {
 		it := os.Args[i]
 		switch it {
 		case "version":
-			parseVersion()
 			fmt.Printf("%s v%d.%d.%d%s\n", exe(), Version.Major, Version.Minor, Version.Patch, Version.Suffix)
 			return
 
@@ -264,16 +352,15 @@ func main() {
 	}
 	handleError(languagePage(), false)
 
-	handlePage(welcomePage)
+	showError(install.init())
 
-	showError(install.load())
-
-	if install.Target.Editable {
-		// originalPath := install.Target.Path
+	if install.TargetPathEditable {
 		handlePage(installPathPage)
 	} else {
-		install.Target.Path = path.Join(install.Target.Path, install.Product.Name)
+		install.TargetPath = filepath.Join(install.TargetPath, install.ProductName)
 	}
+
+	handlePage(zstdMemoryPage)
 
 	handlePage(summaryPage)
 

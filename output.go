@@ -13,7 +13,7 @@ type IOutput interface {
 }
 
 func NewOutput() (IOutput, error) {
-	switch install.Files.Type {
+	switch makeInstall.Files.Type {
 	case "raw":
 		return &rawOutput, nil
 
@@ -29,6 +29,6 @@ func NewOutput() (IOutput, error) {
 		return newTarOutput(coder), nil
 
 	default:
-		return nil, fmt.Errorf("unsupported files.type %q (supported: raw, tar, zstd)", install.Files.Type)
+		return nil, fmt.Errorf("unsupported files.type %q (supported: raw, tar, zstd)", makeInstall.Files.Type)
 	}
 }

@@ -3,33 +3,46 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
+type InputType uint
+
+const (
+	RawInput InputType = iota
+	TarInput
+	ZstdInput
+)
+
 type InstallInfo struct {
-	Product struct {
-		Name string `json:"name"`
-	} `json:"product"`
-	Target struct {
-		Path     string `json:"path"`
-		Editable bool   `json:"editable"`
-	} `json:"target"`
-	Files struct {
-		Type    string   `json:"type"`
-		Encrypt bool     `json:"encrypt"`
-		List    []string `json:"list"`
-	} `json:"files"`
+	ProductName        string
+	TargetPath         string
+	TargetPathEditable bool
+	InputType          string
+	Decrypt            bool
+	Files              []string
 }
 
 var install InstallInfo
 
-func (ii *InstallInfo) Json() ([]byte, error) {
-	return json.Marshal(ii)
+func (ii *InstallInfo) String() string {
+	return fmt.Sprintf(`package main
+
+var install = InstallInfo{
+	ProductName:        %q,
+	TargetPath:         %q,
+	TargetPathEditable: %v,
+	InputType:          %s,
+	Decrypt:            %v,
+	Files:              []string{"%s",},
+}
+`, ii.ProductName, ii.TargetPath, ii.TargetPathEditable, ii.InputType, ii.Decrypt, strings.Join(ii.Files, `","`))
 }
 
 type TargetPlatform struct {
@@ -74,8 +87,8 @@ func (ii *MakeInstallInfo) makeFiles() (list []string, err error) {
 		ii.Files.Include = append(ii.Files.Include, ".")
 	}
 	resolve := func(list []string, p string) ([]string, error) {
-		if !path.IsAbs(p) {
-			p = path.Join(workDir, p)
+		if !filepath.IsAbs(p) {
+			p = filepath.Join(workDir, p)
 		}
 		if _, err := os.Stat(p); err != nil {
 			return list, os.ErrNotExist
@@ -99,10 +112,10 @@ func (ii *MakeInstallInfo) makeFiles() (list []string, err error) {
 		}
 	}
 	excluded := make([]string, 0, 64)
-	ii.Files.Exclude = append(ii.Files.Exclude, "mkinstall.json", ".mkinstall", "mkinstall-output")
 	for _, it := range ii.Files.Exclude {
 		excluded, _ = resolve(excluded, it)
 	}
+	excluded = append(excluded, workOutputDir, workInstallerDir, filepath.Join(workDir, "mkinstall.json"))
 	list = make([]string, 0, len(included))
 loop:
 	for _, it := range included {
@@ -145,4 +158,17 @@ func (ii *MakeInstallInfo) ParseSplitSize() (int, error) {
 		n = 9223372036854775807 // int64.max
 	}
 	return int(n), err
+}
+
+func (ii *MakeInstallInfo) InputType() string {
+	buf := make([]rune, 0, 9)
+	switch ii.Files.Type {
+	case "raw", "tar", "zstd":
+		buf = append(buf, []rune(strings.ToUpper(ii.Files.Type[0:1]))...)
+		buf = append(buf, []rune(ii.Files.Type[1:])...)
+	default:
+		panic("unreachable")
+	}
+	buf = append(buf, 'I', 'n', 'p', 'u', 't')
+	return string(buf)
 }

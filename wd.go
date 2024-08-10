@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -13,7 +13,7 @@ var workDir string
 var workOutputDir string
 var workInstallerDir string
 
-var goPath, goCache string
+var goPath, goCache, goTmp string
 
 func init() {
 	if wd, err := os.Getwd(); err != nil {
@@ -21,10 +21,11 @@ func init() {
 	} else {
 		workDir = wd
 	}
-	workOutputDir = path.Join(workDir, "mkinstall-output")
-	workInstallerDir = path.Join(workDir, "mkinstall-temp")
+	workOutputDir = filepath.Join(workDir, "mkinstall-output")
+	workInstallerDir = filepath.Join(workDir, "mkinstall-temp")
 
-	goCache = path.Join(workInstallerDir, ".cache")
+	goCache = filepath.Join(workInstallerDir, ".cache")
+	goTmp = filepath.Join(workInstallerDir, ".tmp")
 
 	found := false
 	goPath, found = os.LookupEnv("GOPATH")

@@ -2,11 +2,11 @@ package main
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 )
 
 var workDir string
 
 func init() {
-	workDir = path.Dir(os.Args[0])
+	workDir = filepath.Dir(os.Args[0])
 }

@@ -1,95 +1,151 @@
 package main
 
 import (
-	"bytes"
+	"fmt"
 	"io"
 )
 
 type rawInputImpl struct {
-	allBytes  int
-	index     int
-	readCount int
+	index    int
+	size     int64
+	read     int64
+	progress chan int64
 }
 
+var rawInput rawInputImpl
+
 func (i *rawInputImpl) init() error {
-	if i.allBytes == 0 {
-		for {
-			if it := i.NextFile(); it.IsValid() {
-				size, err := it.Size()
-				if err != nil {
-					return err
-				}
-				i.allBytes += size
-			} else {
-				break
-			}
+	i.progress = make(chan int64)
+	for it := i.NextFile(); it.IsValid(); it = i.NextFile() {
+		size, err := it.Size()
+		if err != nil {
+			return err
 		}
+		i.size += size
 	}
 	i.index = 0
 	return nil
 }
 
-var rawInput rawInputImpl
-
-func (i *rawInputImpl) ProgressCurrent() int {
-	return i.index
+func (i *rawInputImpl) All() int64 {
+	return i.size
 }
 
-func (i *rawInputImpl) ProgressAll() int {
-	return len(install.Files.List)
+func (i *rawInputImpl) Current() int64 {
+	return i.read
+}
+
+func (i *rawInputImpl) Chan() <-chan int64 {
+	return i.progress
+}
+
+func (i *rawInputImpl) Progress() ProgressStatus {
+	return i
 }
 
 func (i *rawInputImpl) NextFile() VirtualFile {
-	if i.index >= len(install.Files.List) {
+	if i.index >= len(install.Files) {
 		return VirtualFile{}
 	}
 	i.index++
 	return VirtualFile{
-		Path: install.Files.List[i.index-1],
+		Path: install.Files[i.index-1],
 	}
 }
 
-func (i *rawInputImpl) Next() (OutputFile, error) {
+func (i *rawInputImpl) Next() (InputFile, error) {
 	file := i.NextFile()
 	if !file.IsValid() {
-		return OutputFile{}, nil
+		return InputFile{}, nil
 	}
-	return OutputFile{
+	return InputFile{
 		Path: file.Path,
 		Open: file.Open,
 	}, nil
 }
 
 func (i *rawInputImpl) Close() error {
-	i.index = len(install.Files.List)
+	i.index = len(install.Files)
+	close(i.progress)
+	i.progress = nil
 	return nil
 }
 
-type rawReader struct {
-	buf bytes.Buffer
+type rawReaderImpl struct {
+	current io.ReadCloser
 }
 
-func (r *rawReader) populate() error {
-	if r.buf.Available() == 0 {
-		if f := rawInput.NextFile(); f.IsValid() {
-			rc, err := f.Open()
-			if err != nil {
-				return err
-			}
-			defer rc.Close()
-			io.Copy(&r.buf, rc)
-		} else {
-			return io.EOF
+func (r *rawReaderImpl) next() error {
+	if r.current != nil {
+		if err := r.current.Close(); err != nil {
+			return err
 		}
 	}
-	return nil
+	if f := rawInput.NextFile(); f.IsValid() {
+		rc, err := f.Open()
+		if err == nil {
+			r.current = rc
+		}
+		return err
+	} else {
+		r.current = nil
+		return io.EOF
+	}
 }
 
-func (r *rawReader) Read(p []byte) (int, error) {
-	if err := r.populate(); err != nil {
-		return 0, err
+func (r *rawReaderImpl) sendProgress() {
+	defer func() {
+		// supress send to closed channel
+		_ = recover()
+	}()
+	if rawInput.progress != nil {
+		rawInput.progress <- rawInput.read
 	}
-	n, err := r.buf.Read(p)
-	rawInput.readCount += n
+}
+
+func (r *rawReaderImpl) Read(p []byte) (int, error) {
+	if r.current == nil {
+		if err := r.next(); err != nil {
+			return 0, err
+		}
+	}
+	n, err := r.current.Read(p)
+	if err == io.EOF && n != 0 {
+		err = nil
+	}
+	if err == nil {
+		for n < len(p) {
+			if err := r.next(); err != nil {
+				return n, err
+			}
+			n2, err := r.current.Read(p[n:])
+			n += n2
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return n, err
+			}
+		}
+	}
+	rawInput.read += int64(n)
+	r.sendProgress()
 	return n, err
 }
+
+func (r *rawReaderImpl) Close() (err error) {
+	if r.current != nil {
+		err = r.current.Close()
+		r.current = nil
+	}
+	if err2 := rawInput.Close(); err2 != nil {
+		if err == nil {
+			err = err2
+		} else {
+			err = fmt.Errorf("%v\n%v", err, err2)
+		}
+	}
+	return
+}
+
+var rawReader rawReaderImpl

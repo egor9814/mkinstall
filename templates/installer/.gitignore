@@ -1,2 +1,5 @@
-install.json
+install_var.go
 data*
+encoder.key
+version.go
+*.bak*

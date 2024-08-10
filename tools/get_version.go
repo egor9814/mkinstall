@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	file := path.Join(wd, "version.ref")
+	file := filepath.Join(wd, "version.ref")
 
 	cmd := exec.Command("git", "describe", "--exact-match", "--tags")
 	cmd.Dir = wd

@@ -6,14 +6,19 @@ import (
 )
 
 type encoderType struct {
-	wc    io.WriteCloser
-	index int
-	key   [128]byte
+	wc          io.WriteCloser
+	index       int
+	key         [128]byte
+	initialized bool
 }
 
 var encoder encoderType
 
 func initEncoderKey() {
+	if encoder.initialized {
+		return
+	}
+	encoder.initialized = true
 	for i := range encoder.key {
 		n := rand.Uint64()
 		for j := 1; j < 8; j++ {

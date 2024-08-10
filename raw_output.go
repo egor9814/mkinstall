@@ -3,7 +3,6 @@ package main
 import (
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 )
@@ -13,26 +12,26 @@ type rawOutputImpl struct {
 }
 
 func (o *rawOutputImpl) Open(name string) (io.WriteCloser, error) {
-	if path.IsAbs(name) {
+	if filepath.IsAbs(name) {
 		var err error
 		name, err = filepath.Rel(workDir, name)
 		if err != nil {
 			return nil, err
 		}
 	}
-	target := path.Join(workOutputDir, name)
-	if err := os.MkdirAll(path.Dir(target), 0700); err != nil {
+	target := filepath.Join(workOutputDir, name)
+	if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
 		return nil, err
 	}
 	out, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY, 0700)
 	if err != nil {
 		return nil, err
 	}
-	if install.Files.List == nil {
-		install.Files.List = make([]string, 0, 64)
+	if install.Files == nil {
+		install.Files = make([]string, 0, 64)
 	}
-	install.Files.List = append(install.Files.List, name)
-	if install.Files.Encrypt {
+	install.Files = append(install.Files, name)
+	if install.Decrypt {
 		encoder.wc = out
 		return &encoder, nil
 	}

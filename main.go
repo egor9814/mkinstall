@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 )
 
 func exe() string {
-	return path.Base(os.Args[0])
+	return filepath.Base(os.Args[0])
 }
 
 func help() {
@@ -27,7 +27,7 @@ func version() {
 }
 
 func initProject() {
-	makeInstall.Product.Name = path.Base(workDir)
+	makeInstall.Product.Name = filepath.Base(workDir)
 	makeInstall.Target.EditablePath = true
 	platformOs := []string{
 		"windows", "linux", "darwin", "android", "freebsd", "netbsd", "openbsd", "dragonfly", "plan9", "nacl",
@@ -37,11 +37,17 @@ func initProject() {
 	}
 	makeInstall.Target.Platforms = make([]TargetPlatform, len(platformOs)*len(platformArch))
 	for i, os := range platformOs {
+		var p string
+		if os == "windows" {
+			p = "$userprofile/"
+		} else {
+			p = "$HOME/"
+		}
 		for j, arch := range platformArch {
 			makeInstall.Target.Platforms[i*len(platformArch)+j] = TargetPlatform{
 				Os:   os,
 				Arch: arch,
-				Path: "$HOME/",
+				Path: p,
 			}
 		}
 	}
@@ -61,6 +67,7 @@ func initProject() {
 
 func main() {
 	inputFile := "mkinstall.json"
+	noPack := false
 
 	for i, l := 1, len(os.Args); i < l; i++ {
 		it := os.Args[i]
@@ -76,6 +83,9 @@ func main() {
 		case "init":
 			initProject()
 			return
+
+		case "--no-pack":
+			noPack = true
 
 		default:
 			if _, err := os.Stat(it); err != nil {
@@ -94,5 +104,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pack()
+	pack(noPack)
 }

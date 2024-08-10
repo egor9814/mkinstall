@@ -7,29 +7,27 @@ import (
 
 type tarInputImpl struct {
 	reader *tar.Reader
+	c      io.Closer
+	i      int
 }
 
-func newTarInput(r io.Reader) *tarInputImpl {
+func newTarInput(r io.Reader, c io.Closer) *tarInputImpl {
 	return &tarInputImpl{
 		reader: tar.NewReader(r),
+		c:      c,
 	}
 }
 
-func (i *tarInputImpl) ProgressCurrent() int {
-	return rawInput.readCount
-}
-
-func (i *tarInputImpl) ProgressAll() int {
-	return rawInput.allBytes
+func (i *tarInputImpl) Progress() ProgressStatus {
+	return rawInput.Progress()
 }
 
 type tarReadCloser struct {
 	i *tarInputImpl
-	r io.Reader
 }
 
 func (r *tarReadCloser) Read(p []byte) (n int, err error) {
-	n, err = r.r.Read(p)
+	n, err = r.i.reader.Read(p)
 	if err == io.EOF && n != 0 {
 		err = nil
 	}
@@ -40,26 +38,30 @@ func (*tarReadCloser) Close() error {
 	return nil
 }
 
-func (i *tarInputImpl) Next() (OutputFile, error) {
+func (i *tarInputImpl) Next() (InputFile, error) {
 	header, err := i.reader.Next()
 	if err == io.EOF {
-		return OutputFile{}, nil
+		return InputFile{}, nil
 	}
 	if err != nil {
-		return OutputFile{}, err
+		return InputFile{}, err
 	}
-	return OutputFile{
+	i.i++
+	return InputFile{
 		Path: header.Name,
 		Open: func() (io.ReadCloser, error) {
 			return &tarReadCloser{
 				i: i,
-				r: i.reader,
 			}, nil
 		},
 	}, nil
 }
 
-func (i *tarInputImpl) Close() error {
+func (i *tarInputImpl) Close() (err error) {
 	i.reader = nil
-	return nil
+	if i.c != nil {
+		err = i.c.Close()
+		i.c = nil
+	}
+	return
 }

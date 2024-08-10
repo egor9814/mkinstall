@@ -36,9 +36,9 @@ func (o *tarOutputImpl) Open(name string) (io.WriteCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	info, _ := os.Stat(realName)
+	info, _ := os.Stat(name)
 	header := tar.Header{
-		Name: realName,
+		Name: filepath.ToSlash(realName),
 		Mode: 0600,
 		Size: info.Size(),
 	}

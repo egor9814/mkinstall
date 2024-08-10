@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 )
 
 //go:embed templates/installer/decoder.go
@@ -43,13 +43,13 @@ var template_tar_input_go string
 //go:embed templates/installer/wd.go
 var template_wd_go string
 
-//go:embed version.go
-var template_version_go string
+//go:embed templates/installer/zstd.go
+var template_zstd_go string
 
 func generate() error {
 	writeBytes := func(name string, data []byte) error {
-		target := path.Join(workInstallerDir, name)
-		if err := os.MkdirAll(path.Dir(target), 0700); err != nil {
+		target := filepath.Join(workInstallerDir, name)
+		if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
 			return err
 		}
 		return os.WriteFile(target, data, 0600)
@@ -107,15 +107,15 @@ func generate() error {
 		return err
 	}
 
-	if err := write("version.go", template_version_go); err != nil {
+	if err := write("zstd.go", template_zstd_go); err != nil {
 		return err
 	}
 
-	if err := write("version.ref", version_ref); err != nil {
+	if err := write("version.go", VersionString()); err != nil {
 		return err
 	}
 
-	if install.Files.Encrypt {
+	if install.Decrypt {
 		if err := writeBytes("encoder.key", encoder.key[:]); err != nil {
 			return err
 		}
@@ -125,16 +125,15 @@ func generate() error {
 		}
 	}
 
+	if err := os.MkdirAll(goTmp, 0700); err != nil {
+		return err
+	}
 	pl := len(makeInstall.Target.Platforms)
 	for i, it := range makeInstall.Target.Platforms {
 		log.Printf("> [%d/%d] building installer for %s %s...\n", i+1, pl, it.Os, it.Arch)
-		install.Target.Path = it.Path
-		if data, err := install.Json(); err != nil {
+		install.TargetPath = it.Path
+		if err := write("install_var.go", install.String()); err != nil {
 			return err
-		} else {
-			if err := write("install.json", string(data)); err != nil {
-				return err
-			}
 		}
 		if err := buildInstaller(&it); err != nil {
 			return err
@@ -145,13 +144,13 @@ func generate() error {
 }
 
 func buildInstaller(platform *TargetPlatform) error {
-	target := path.Join(workOutputDir, "Setup_"+platform.Os+"_"+platform.Arch)
+	target := filepath.Join(workOutputDir, "Setup_"+platform.Os+"_"+platform.Arch)
 	if platform.Os == "windows" {
 		target += ".exe"
 	}
 	cmd := exec.Command("go", "build", "-v", "-o", target)
 	cmd.Dir = workInstallerDir
-	cmd.Env = append(cmd.Env, "GOOS="+platform.Os, "GOARCH="+platform.Arch, "GOPATH="+goPath, "GOCACHE="+goCache)
+	cmd.Env = append(cmd.Env, "GOOS="+platform.Os, "GOARCH="+platform.Arch, "GOPATH="+goPath, "GOCACHE="+goCache, "GOTMPDIR="+goTmp)
 	var out bytes.Buffer
 	cmd.Stderr = &out
 	cmd.Stdout = &out

@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -47,4 +48,21 @@ func parseVersion() {
 			*output[i] = int(n)
 		}
 	}
+}
+
+func VersionString() string {
+	return fmt.Sprintf(`package main
+
+var Version struct {
+	Major, Minor, Patch int
+	Suffix              string
+}
+
+func init() {
+	Version.Major = %d
+	Version.Minor = %d
+	Version.Patch = %d
+	Version.Suffix = %q
+}
+`, Version.Major, Version.Minor, Version.Patch, Version.Suffix)
 }

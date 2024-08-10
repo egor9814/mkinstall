@@ -3,7 +3,7 @@ package main
 import (
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 )
 
 type VirtualFile struct {
@@ -11,37 +11,37 @@ type VirtualFile struct {
 }
 
 func (f *VirtualFile) Open() (rc io.ReadCloser, err error) {
-	defer func() {
-		if rc != nil && install.Files.Encrypt {
-			decoder.rc = rc
-			rc = &decoder
-		}
-	}()
 	if len(f.Path) == 0 {
 		return nil, nil
 	}
-	return os.Open(path.Join(workDir, f.Path))
+	rc, err = os.Open(filepath.Join(workDir, f.Path))
+	if err == nil && install.Decrypt {
+		decoder.rc = rc
+		rc = &decoder
+	}
+	return
 }
 
 func (f *VirtualFile) IsValid() bool {
 	return len(f.Path) != 0
 }
 
-func (f *VirtualFile) Size() (int, error) {
-	if len(f.Path) == 0 {
-		return 0, nil
-	}
-	info, err := os.Stat(path.Join(workDir, f.Path))
-	if err != nil {
-		return 0, err
-	}
-	return int(info.Size()), nil
-}
-
 func (f *VirtualFile) Create() (*os.File, error) {
-	dir := path.Dir(f.Path)
+	p := filepath.ToSlash(f.Path)
+	dir := filepath.Dir(p)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return nil, err
 	}
-	return os.OpenFile(f.Path, os.O_CREATE|os.O_WRONLY, 0600)
+	return os.OpenFile(p, os.O_CREATE|os.O_WRONLY, 0600)
+}
+
+func (f *VirtualFile) Size() (int64, error) {
+	if len(f.Path) == 0 {
+		return 0, os.ErrNotExist
+	}
+	if info, err := os.Stat(filepath.Join(workDir, f.Path)); err != nil {
+		return 0, err
+	} else {
+		return info.Size(), err
+	}
 }

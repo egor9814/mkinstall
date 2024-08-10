@@ -2,43 +2,50 @@ package main
 
 import (
 	"io"
-
-	"github.com/klauspost/compress/zstd"
 )
 
-type OutputFile struct {
+type InputType uint
+
+const (
+	RawInput InputType = iota
+	TarInput
+	ZstdInput
+)
+
+type InputFile struct {
 	Path string
 	Open func() (io.ReadCloser, error)
 }
 
-func (f *OutputFile) IsValid() bool {
+func (f *InputFile) IsValid() bool {
 	return len(f.Path) != 0
+}
+
+type ProgressStatus interface {
+	All() int64
+	Current() int64
+	Chan() <-chan int64
 }
 
 type IInput interface {
 	io.Closer
-	ProgressCurrent() int
-	ProgressAll() int
-	Next() (OutputFile, error)
+	Progress() ProgressStatus
+	Next() (InputFile, error)
 }
 
-func NewInput() (IInput, error) {
+func (t InputType) Open() (IInput, error) {
 	if err := rawInput.init(); err != nil {
 		return nil, err
 	}
-	switch install.Files.Type {
-	case "raw":
+	switch t {
+	case RawInput:
 		return &rawInput, nil
 
-	case "tar":
-		return newTarInput(&rawReader{}), nil
+	case TarInput:
+		return newTarInput(&rawReader, &rawReader), nil
 
-	case "zstd":
-		input, err := zstd.NewReader(&rawReader{})
-		if err != nil {
-			return nil, err
-		}
-		return newTarInput(input), nil
+	case ZstdInput:
+		return newZstdInput(&rawReader, &rawReader)
 
 	default:
 		panic("unreachable")
