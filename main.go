@@ -30,10 +30,10 @@ func initProject() {
 	makeInstall.Product.Name = filepath.Base(workDir)
 	makeInstall.Target.EditablePath = true
 	platformOs := []string{
-		"windows", "linux", "darwin", "android", "freebsd", "netbsd", "openbsd", "dragonfly", "plan9", "nacl",
+		"windows", "linux", /* "darwin", "android", "freebsd", "netbsd", "openbsd", "dragonfly", "plan9", "nacl", */
 	}
 	platformArch := []string{
-		"amd64", "arm", "amd64p32", "386",
+		"amd64", "arm" /* "amd64p32",  */, "386",
 	}
 	makeInstall.Target.Platforms = make([]TargetPlatform, len(platformOs)*len(platformArch))
 	for i, os := range platformOs {
