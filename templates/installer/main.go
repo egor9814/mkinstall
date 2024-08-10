@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -71,6 +73,30 @@ func zstdMemoryPage() error {
 		zstdInputInfo.maxMem *= 2
 	}
 	panic("unreachable")
+}
+
+func makeShortcutPage() error {
+	if len(install.Shortcuts) == 0 {
+		return nil
+	}
+	title := [...]string{
+		English: "Settings",
+		Russian: "Параметры",
+	}
+	message := [...]string{
+		English: "Create shortcuts?",
+		Russian: "Создать ярлыки?",
+	}
+	err := zenity.Question(
+		message[lang],
+		zenity.Title(title[lang]),
+		zenity.OKLabel(Yes[lang]),
+		zenity.ExtraButton(No[lang]),
+	)
+	if err == zenity.ErrExtraButton {
+		install.Shortcuts = nil
+	}
+	return err
 }
 
 func installPathPage() error {
@@ -266,6 +292,30 @@ func installPage() error {
 	return nil
 }
 
+func makeShortcuts() error {
+	l := len(install.Shortcuts)
+	if l == 0 {
+		return nil
+	}
+	errList := make([]error, 0, l)
+	for _, it := range install.Shortcuts {
+		if err := it.Make(); err != nil {
+			errList = append(errList, err)
+		}
+	}
+	if l := len(errList); l == 0 {
+		return nil
+	} else if l == 1 {
+		return errList[0]
+	} else {
+		s := make([]string, l)
+		for i, it := range errList {
+			s[i] = it.Error()
+		}
+		return errors.New(strings.Join(s, "\n"))
+	}
+}
+
 func finishPage() error {
 	title := [...]string{
 		English: "Finish",
@@ -362,9 +412,13 @@ func main() {
 
 	handlePage(zstdMemoryPage)
 
+	handlePage(makeShortcutPage)
+
 	handlePage(summaryPage)
 
 	handlePage(installPage)
+
+	showError(makeShortcuts())
 
 	handlePage(finishPage)
 }

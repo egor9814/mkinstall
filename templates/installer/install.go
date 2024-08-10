@@ -13,6 +13,7 @@ type InstallInfo struct {
 	InputType          InputType
 	Decrypt            bool
 	Files              []string
+	Shortcuts          []Shortcut
 }
 
 func (ii *InstallInfo) init() error {

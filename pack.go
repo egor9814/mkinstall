@@ -68,6 +68,8 @@ func pack(noPack bool) {
 		rawOutput.maxCount = n
 	}
 
+	install.Shortcuts = makeInstall.Shortcuts
+
 	if !noPack {
 		files, err := makeInstall.makeFiles()
 		if err != nil {

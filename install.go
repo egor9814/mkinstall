@@ -27,6 +27,7 @@ type InstallInfo struct {
 	InputType          string
 	Decrypt            bool
 	Files              []string
+	Shortcuts          Shortcuts
 }
 
 var install InstallInfo
@@ -40,15 +41,62 @@ var install = InstallInfo{
 	TargetPathEditable: %v,
 	InputType:          %s,
 	Decrypt:            %v,
-	Files:              []string{"%s",},
+	Files:              []string{"%s"},
+	Shortcuts:          %s,
 }
-`, ii.ProductName, ii.TargetPath, ii.TargetPathEditable, ii.InputType, ii.Decrypt, strings.Join(ii.Files, `","`))
+`, ii.ProductName, ii.TargetPath, ii.TargetPathEditable, ii.InputType, ii.Decrypt, strings.Join(ii.Files, `","`), ii.Shortcuts.String())
 }
 
 type TargetPlatform struct {
 	Os   string `json:"os"`
 	Arch string `json:"arch"`
 	Path string `json:"path"`
+}
+
+type ShortcutUnix struct {
+	Icon       *string  `json:"icon"`
+	Categories []string `json:"categories"`
+}
+
+type Shortcut struct {
+	Name         *string      `json:"name"`
+	Target       string       `json:"target"`
+	Arguments    []string     `json:"args"`
+	ShortcutUnix ShortcutUnix `json:"unix"`
+}
+
+func (s *Shortcut) String() string {
+	var name string
+	if s.Name != nil {
+		name = *s.Name
+	} else {
+		name = install.ProductName
+	}
+	var icon string
+	if s.ShortcutUnix.Icon != nil {
+		icon = *s.ShortcutUnix.Icon
+	}
+	return fmt.Sprintf(
+		`{Name: %q, Target: %q, Arguments: []string{"%s"}, Icon: %q, Categories: []string{"%s"}}`,
+		name,
+		s.Target,
+		strings.Join(s.Arguments, `", "`),
+		icon,
+		strings.Join(s.ShortcutUnix.Categories, `", "`),
+	)
+}
+
+type Shortcuts []Shortcut
+
+func (s *Shortcuts) String() string {
+	l := make([]string, len(*s))
+	for i, it := range *s {
+		l[i] = it.String()
+	}
+	return fmt.Sprintf(
+		`[]Shortcut{%s}`,
+		strings.Join(l, ", "),
+	)
 }
 
 type MakeInstallInfo struct {
@@ -66,6 +114,7 @@ type MakeInstallInfo struct {
 		Include []string `json:"include"`
 		Exclude []string `json:"exclude"`
 	} `json:"files"`
+	Shortcuts Shortcuts `json:"shortcuts"`
 }
 
 var makeInstall MakeInstallInfo

@@ -37,6 +37,15 @@ var template_main_go string
 //go:embed templates/installer/raw_input.go
 var template_raw_input_go string
 
+//go:embed templates/installer/shortcut_unix.go
+var template_shortcut_unix_go string
+
+//go:embed templates/installer/shortcut_windows.go
+var template_shortcut_windows_go string
+
+//go:embed templates/installer/shortcut.go
+var template_shortcut_go string
+
 //go:embed templates/installer/tar_input.go
 var template_tar_input_go string
 
@@ -96,6 +105,18 @@ func generate() error {
 	}
 
 	if err := write("raw_input.go", template_raw_input_go); err != nil {
+		return err
+	}
+
+	if err := write("shortcut_unix.go", template_shortcut_unix_go); err != nil {
+		return err
+	}
+
+	if err := write("shortcut_windows.go", template_shortcut_windows_go); err != nil {
+		return err
+	}
+
+	if err := write("shortcut.go", template_shortcut_go); err != nil {
 		return err
 	}
 
